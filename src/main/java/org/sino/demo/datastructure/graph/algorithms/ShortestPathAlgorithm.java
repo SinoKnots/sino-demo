@@ -20,6 +20,10 @@ public class ShortestPathAlgorithm {
      * @return 到其他顶点及其最短路径
      */
     public static List<String> calcShortestPath(Undigraph undigraph, String startVertex, String endVertex, boolean byWeight) {
+        Set<String> vertexSet = undigraph.getVertexSet();
+        if (!vertexSet.contains(startVertex) || !vertexSet.contains(endVertex)) {
+            return new ArrayList<>();
+        }
         if (byWeight) {
             return calcShortestPathByDijkstra(undigraph, startVertex, endVertex);
         }
@@ -28,9 +32,6 @@ public class ShortestPathAlgorithm {
 
     private static List<String> calcShortestPathByDijkstra(Undigraph undigraph, String startVertex, String endVertex) {
         Set<String> vertexSet = undigraph.getVertexSet();
-        if (!vertexSet.contains(startVertex) || !vertexSet.contains(endVertex)) {
-            return new ArrayList<>();
-        }
         //邻接边
         Map<String, Map<String, Integer>> adjMap = undigraph.getAdjMap();
         // 已计算最短路径的顶点明细信息
@@ -62,60 +63,8 @@ public class ShortestPathAlgorithm {
         return new ArrayList<>();
     }
 
-    private static void calcShortestDistance(VisitedVertex preVisitedVertex, Map<String, Map<String, Integer>> adjMap, Map<String, VisitedVertex> disVertexMap) {
-        String preVertex = preVisitedVertex.getVertexName();
-        int preWeightSum = preVisitedVertex.getWeightSum();
-        Map<String, Integer> adjVertex = adjMap.get(preVertex);
-        adjVertex.forEach((key, weight) -> {
-            if(disVertexMap.containsKey(key)) {
-                VisitedVertex visitedVertex = disVertexMap.get(key);
-                int weightSum = visitedVertex.getWeightSum();
-                if(preWeightSum == 0 || weightSum == -1 || (weight != -1 && weight + preWeightSum < weightSum)) {
-                    visitedVertex.visited(key, weight, preVisitedVertex);
-                    disVertexMap.put(key, visitedVertex);
-                }
-            }
-        });
-    }
-
-    private static VisitedVertex getMin4DisMap(Map<String, VisitedVertex> disMap) {
-        AtomicInteger min = new AtomicInteger(Integer.MAX_VALUE);
-        AtomicReference<String> minKey = new AtomicReference<>("");
-        disMap.forEach((key, visitedVertex) -> {
-            int weightSum = visitedVertex.getWeightSum();
-            if(weightSum != -1 && weightSum < min.get()) {
-                min.set(weightSum);
-                minKey.set(key);
-            }
-        });
-        if(!"".equals(minKey.get())) {
-            return disMap.get(minKey.get());
-        }
-        return null;
-    }
-
-    private static Map<String, VisitedVertex> initDisInfo(String startVertex,
-            Set<String> vertexSet, Map<String, Map<String, Integer>> adjMap) {
-        Map<String, VisitedVertex> disMap = new HashMap<>();
-        Map<String, Integer> adjVertexMap = adjMap.get(startVertex);
-        // 初始化距离信息
-        vertexSet.forEach(vertex -> {
-            int weight = -1;
-            if(adjVertexMap.containsKey(vertex)) {
-                weight = adjVertexMap.get(vertex);
-            } else if (vertex.equals(startVertex)) {
-                weight = 0;
-            }
-            visitedVertex(vertex, weight, startVertex, disMap);
-        });
-        return disMap;
-    }
 
     private static List<String> calcShortestPathByBfs(Undigraph undigraph, String startVertex, String endVertex) {
-        Set<String> vertexSet = undigraph.getVertexSet();
-        if (!vertexSet.contains(startVertex) || !vertexSet.contains(endVertex)) {
-            return new ArrayList<>();
-        }
         //邻接边
         Map<String, Map<String, Integer>> adjMap = undigraph.getAdjMap();
         // 已访问的顶点集
@@ -161,6 +110,55 @@ public class ShortestPathAlgorithm {
             }
         }
         return visitedVertexMap.get(endVertex).getPath();
+    }
+
+    private static void calcShortestDistance(VisitedVertex preVisitedVertex, Map<String, Map<String, Integer>> adjMap, Map<String, VisitedVertex> disVertexMap) {
+        String preVertex = preVisitedVertex.getVertexName();
+        int preWeightSum = preVisitedVertex.getWeightSum();
+        Map<String, Integer> adjVertex = adjMap.get(preVertex);
+        adjVertex.forEach((key, weight) -> {
+            if(disVertexMap.containsKey(key)) {
+                VisitedVertex visitedVertex = disVertexMap.get(key);
+                int weightSum = visitedVertex.getWeightSum();
+                if(preWeightSum == 0 || weightSum == -1 || (weight != -1 && weight + preWeightSum < weightSum)) {
+                    visitedVertex.visited(key, weight, preVisitedVertex);
+                    disVertexMap.put(key, visitedVertex);
+                }
+            }
+        });
+    }
+
+    private static VisitedVertex getMin4DisMap(Map<String, VisitedVertex> disMap) {
+        AtomicInteger min = new AtomicInteger(Integer.MAX_VALUE);
+        AtomicReference<String> minKey = new AtomicReference<>("");
+        disMap.forEach((key, visitedVertex) -> {
+            int weightSum = visitedVertex.getWeightSum();
+            if(weightSum != -1 && weightSum < min.get()) {
+                min.set(weightSum);
+                minKey.set(key);
+            }
+        });
+        if(!"".equals(minKey.get())) {
+            return disMap.get(minKey.get());
+        }
+        return null;
+    }
+
+    private static Map<String, VisitedVertex> initDisInfo(String startVertex,
+                                                          Set<String> vertexSet, Map<String, Map<String, Integer>> adjMap) {
+        Map<String, VisitedVertex> disMap = new HashMap<>();
+        Map<String, Integer> adjVertexMap = adjMap.get(startVertex);
+        // 初始化距离信息
+        vertexSet.forEach(vertex -> {
+            int weight = -1;
+            if(adjVertexMap.containsKey(vertex)) {
+                weight = adjVertexMap.get(vertex);
+            } else if (vertex.equals(startVertex)) {
+                weight = 0;
+            }
+            visitedVertex(vertex, weight, startVertex, disMap);
+        });
+        return disMap;
     }
 
     private static void visitedVertex(String currentVertex, Integer weight, String preVertex, Map<String, VisitedVertex> visitedVertexMap){
